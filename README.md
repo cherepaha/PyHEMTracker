@@ -5,9 +5,9 @@ Dependencies:
 
 -NumPy
 
--PsychoPy
+-PsychoPy (https://github.com/psychopy/psychopy/)
 
--PyGaze
+-PyGaze (https://github.com/esdalmaijer/PyGaze)
 
 If you want to specify some parameters of psychopy's DotStim in degrees of visual angle instead of pixels, 
 you also need to install psychopy's MonitorCenter. In MonitorCenter, you have to create a profile for the monitor 
