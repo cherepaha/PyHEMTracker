@@ -117,50 +117,12 @@ class HEMTrackerUI:
         self.mouse.set_visible(False)
         self.disp.fill(self.fixation_screen)
         self.disp.show()
-        libtime.pause(time)        
-    
-    def show_rdk(self, direction, coherence, tracker, trial_info, stim_viewing_log, 
-                 duration = 800):
-        self.mouse.set_visible(False)
-        
-        self.rdk_dir = direction
-        self.rdk_coherence = coherence
-        self.rdk_duration = duration
-
-        self.dot_stim = visual.DotStim(pygaze.expdisplay, nDots=6, dotSize=3, dotLife=-1,
-                            units='deg', speed=5.0/60.0, fieldSize=5.0, fieldShape='circle',
-                            signalDots='different', noiseDots='position')
-        self.dot_stim.setAutoDraw(True)
-        self.dot_stim.dir = self.rdk_dir
-        self.dot_stim.coherence = self.rdk_coherence
-        self.stimuli_screen.screen.append(self.dot_stim)
-        
-#        stim_viewing_log = []
-        stim_start_time = libtime.get_time()
-        t = 0
-        
-        while t  < duration:
-            t = libtime.get_time() - stim_start_time
-            self.disp.fill(screen=self.stimuli_screen)
-            self.disp.show()
-
-            mouse_position = self.mouse.get_pos()
-            eye_position = tracker.sample()
-            pupil_size = 0 if DUMMYMODE else tracker.pupil_size()
-            
-            stim_viewing_log.append([trial_info['subj_id'], trial_info['session_no'], 
-                                     trial_info['block_no'], 
-                                     trial_info['trial_no'], str(t), mouse_position[0], 
-                                     mouse_position[1], eye_position[0], 
-                                     eye_position[1], pupil_size])
-            libtime.pause(TIMESTEP)
-            
-        self.dot_stim.setAutoDraw(False)
-#        return stim_viewing_log
+        libtime.pause(time)
         
     def show_rdk_EAS(self, direction, coherence, tracker, trial_info, stim_viewing_log, 
                      duration = 800, n_sequences = 3, density = 16.7, dot_speed = 5.0, 
                      dot_lifetime = 3, frame_rate = 60, field_size = 5.0, field_scale = 1.1):
+                         
         self.mouse.set_visible(False)
 
         self.rdk_dir = direction
@@ -178,8 +140,6 @@ class HEMTrackerUI:
 
         # stores logical index of the dots belonging to current sequence
         current_sequence_dots = np.zeros(n_dots, dtype=bool)
-
-#        dot_lifetimes = np.zeros(n_dots)
         
         # dot displacement (in visual angle degrees) per n_sequence frames
         displacement = (dot_speed/field_size) * n_sequences / frame_rate
