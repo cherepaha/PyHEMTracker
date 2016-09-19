@@ -8,6 +8,9 @@ Desktop.ini
 # python byte code
 *.pyc
 
+# data files
+data/
+
 # Recycle Bin used on file shares
 $RECYCLE.BIN/
 
