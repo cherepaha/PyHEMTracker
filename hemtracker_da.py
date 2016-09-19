@@ -2,6 +2,7 @@ from constants import *
 import random, csv
 import numpy as np
 from datetime import datetime
+import os
 
 class HEMTrackerDA:                                     
     # stubs for experiment-level variables
@@ -16,9 +17,13 @@ class HEMTrackerDA:
         self.initialize_log()
     
     def initialize_log(self):
-        log_name = 'data/raw/%s/' + self.exp_info['subj_id'] + '_' + \
+        log_path = 'data/raw/%s/'        
+        log_name = log_path + self.exp_info['subj_id'] + '_' + \
                 self.exp_info['start_time'] + '_%s.txt'
-        
+
+        if not os.path.exists(log_path % 'choices'):
+            os.makedirs(log_path % 'choices')
+            
         self.choices_log_file = log_name % ('choices', 'choices')
         with open(self.choices_log_file, 'ab+') as fp:
             writer = csv.writer(fp, delimiter = '\t')
@@ -26,6 +31,11 @@ class HEMTrackerDA:
                              'direction', 'coherence', 'duration', 'response', 'response_time'])
 
         if not KEYBOARD_MODE:
+            if not os.path.exists(log_path % 'stim'):
+                os.makedirs(log_path % 'stim')
+            if not os.path.exists(log_path % 'dynamics'):
+                os.makedirs(log_path % 'dynamics')
+            
             self.stim_log_file = log_name % ('stim', 'stim')
             self.response_dynamics_log_file = log_name % ('dynamics', 'dynamics')
             
