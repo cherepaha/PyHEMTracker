@@ -12,15 +12,13 @@ class HEMTrackerUI:
     arrow_pos_right = (DISPSIZE[0]-150, 150)    
     arrow_diameter = 250
     
-    rdk_dir = 0.0
-    rdk_coherence = 0.0
-    rdk_duration = 0
-    
-    # this has to correspond to the parameters set for show_rdk_EAS()
-    n_dots = 3
+    # NB: n_elements has to be set manually based on n_dots and n_sequences calculated 
+    # in show_rdk_EAS(). This global parameter is used to initialize ElementArrayStim, 
+    # as it has to know in advance how many dots will be displayed in each frame
+    n_elements = 3
 
     def __init__(self):
-        self.disp = libscreen.Display(monitor = MONITOR_LABEL)
+        self.disp = libscreen.Display(monitor = MONITOR)
         self.mouse = libinput.Mouse(visible=True)
         self.keyboard = libinput.Keyboard(keylist=['space', 'left', 'right', 'lctrl', 'rctrl'], 
                                           timeout=None)
@@ -28,7 +26,7 @@ class HEMTrackerUI:
         self.blank_screen = libscreen.Screen()
 
         self.intro_screen = libscreen.Screen()
-#        self.intro_screen.set_background_colour(colour='black')
+
         self.intro_screen.draw_text(text='During each trial, a cloud of moving dots is going to \
                                             appear on the screen. Watch it carefully to detect \
                                             whether the dots in general are moving to the left or \
@@ -49,7 +47,7 @@ class HEMTrackerUI:
         self.stimuli_screen = libscreen.Screen()
         self.dot_stim = visual.ElementArrayStim(pygaze.expdisplay, elementTex=None, 
                                                 fieldShape='circle', elementMask='circle', 
-                                                sizes=0.06, nElements = self.n_dots,
+                                                sizes=0.06, nElements = self.n_elements,
                                                 units='deg', fieldSize = 5.0)        
         self.stimuli_screen.screen.append(self.dot_stim)
 
@@ -110,8 +108,7 @@ class HEMTrackerUI:
                 if ((self.mouse.get_pressed()[0]==1) and 
                     (abs(mouse_position[0]-DISPSIZE[0]/2)<self.ready_button_width/2) and 
                     (abs(mouse_position[1]-DISPSIZE[1]+30)<self.ready_button_height/2)):
-                        break
-#        libtime.pause(300)        
+                        break     
                         
     def show_fixation_screen(self, time = 0):
         self.mouse.set_visible(False)
@@ -119,32 +116,34 @@ class HEMTrackerUI:
         self.disp.show()
         libtime.pause(time)
         
-    def show_rdk_EAS(self, direction, coherence, tracker, trial_info, stim_viewing_log, 
+    # TODO: implement limited dot lifetime
+    def show_rdk_EAS(self, trial_info, tracker, stim_viewing_log, 
                      duration = 800, n_sequences = 3, density = 16.7, dot_speed = 5.0, 
-                     dot_lifetime = 3, frame_rate = 60, field_size = 5.0, field_scale = 1.1):
+                     frame_rate = 60, field_size = 5.0, field_scale = 1.1):
                          
         self.mouse.set_visible(False)
-
-        self.rdk_dir = direction
-        self.rdk_coherence = coherence
-        self.rdk_duration = duration
 
         field_width = field_size*field_scale
         n_dots = int(np.ceil(density * field_width**2 / frame_rate))
         
         # due to ElementArrayStim limitations, n_dots has to be divisible by n_sequences
-        # so we artificially add 
+        # so we artificially add extra dots in case it isn't divisible
         n_dots += (n_sequences - n_dots % n_sequences) % n_sequences
-        # the resulting n_dots should be divided by n_sequences and set as the nDots parameter 
+
+        # NB: the resulting n_dots should be divided by n_sequences and set as the nDots parameter 
         # of ElementArrayStim in  __init__ (currently 3, given density = 16.7)
+        if (self.n_elements * n_sequences != n_dots):
+            raise ValueError('Check n_elements parameter provided to ElementArrayStim! ' 
+                            'It should be equal to n_dots/n_sequences, where n_dots is '
+                            'calculated based on density, frame rate and field width.')
 
         # stores logical index of the dots belonging to current sequence
         current_sequence_dots = np.zeros(n_dots, dtype=bool)
         
-        # dot displacement (in visual angle degrees) per n_sequence frames
+        # dot displacement (in degrees of visual angle) per n_sequence frames
         displacement = (dot_speed/field_size) * n_sequences / frame_rate
-        deltaX = displacement*np.cos(np.pi*direction/180.0)
-        deltaY = displacement*np.sin(np.pi*direction/180.0)
+        deltaX = displacement*np.cos(np.pi*trial_info['direction']/180.0)
+        deltaY = displacement*np.sin(np.pi*trial_info['direction']/180.0)
             
         dot_positions = np.random.rand(2, n_dots)
 
@@ -152,7 +151,7 @@ class HEMTrackerUI:
         t = 0
         current_sequence = -1
         
-        while t  < duration:
+        while t  < trial_info['duration']:
             t = libtime.get_time() - stim_start_time
             current_sequence = (current_sequence + 1) % n_sequences
             # first, set all values to False
@@ -168,11 +167,9 @@ class HEMTrackerUI:
             # the dot should be coherently or randomly moved
             # coherent_rand is set to True for those dots of the current frame 
             # which are coherently moved
-            coherent_rand = np.random.rand(current_n_dots) < coherence
+            coherent_rand = np.random.rand(current_n_dots) < trial_info['coherence']
             n_coherent_dots = sum(coherent_rand)
             n_noncoherent_dots = current_n_dots - n_coherent_dots
-            
-            # TODO: now assume lifetime is unlimited. Implement limited lifetime
             
             coherent_dots[current_sequence_dots] = coherent_rand
             
@@ -197,33 +194,32 @@ class HEMTrackerUI:
             self.disp.fill(screen=self.stimuli_screen)            
             self.disp.show()
             
-            mouse_position = self.mouse.get_pos()
-            eye_position = tracker.sample()
-            pupil_size = 0 if DUMMYMODE else tracker.pupil_size()
-            
-            stim_viewing_log.append([trial_info['subj_id'], trial_info['session_no'], 
-                                     trial_info['block_no'], 
-                                     trial_info['trial_no'], str(t), mouse_position[0], 
-                                     mouse_position[1], eye_position[0], 
-                                     eye_position[1], pupil_size])
+            if not KEYBOARD_MODE:
+                mouse_position = self.mouse.get_pos()
+                eye_position = tracker.sample()
+                pupil_size = 0 if DUMMYMODE else tracker.pupil_size()
+                
+                stim_viewing_log.append([trial_info['subj_id'], trial_info['session_no'], 
+                                         trial_info['block_no'], 
+                                         trial_info['trial_no'], str(t), mouse_position[0], 
+                                         mouse_position[1], eye_position[0], 
+                                         eye_position[1], pupil_size])
         
-    def show_response_screen(self, tracker, trial_info, response_dynamics_log):
-        self.mouse.set_visible(True)
-        self.mouse.set_pos((DISPSIZE[0]/2, DISPSIZE[1]-30))
+    def show_response_screen(self, trial_info, tracker, response_dynamics_log):
+        if not KEYBOARD_MODE:
+            self.mouse.set_visible(True)
+            self.mouse.set_pos((DISPSIZE[0]/2, DISPSIZE[1]-30))
         
         self.disp.fill(screen=self.response_screen)
         self.disp.show()
         
         trial_start_time = libtime.get_time()
-        
-        # keyboard mode
-        
+               
         if(KEYBOARD_MODE):
             response_key, trial_end_time = self.keyboard.get_key(timeout=None)
             response = 0 if (response_key=='right') or (response_key=='rctrl') else 180
             response_time  = trial_end_time - trial_start_time
         else:
-        # mouse mode 
             while(True):     
                 t = libtime.get_time() - trial_start_time
                 mouse_position = self.mouse.get_pos()
@@ -244,20 +240,20 @@ class HEMTrackerUI:
                             (mouse_position[1]-self.arrow_pos_right[1])**2 < 
                                 self.arrow_diameter**2/4)):
                             break
-                # 180: 'left' response
-                # 0 'right' response
+            # 180: 'left' response
+            # 0: 'right' response
             response = 0 if self.mouse.get_pos()[0]-DISPSIZE[0]/2>0 else 180
             response_time = libtime.get_time()-trial_start_time
 
         choice_info = [trial_info['subj_id'], trial_info['session_no'], trial_info['block_no'], 
-                       trial_info['trial_no'], trial_info['is_practice'], self.rdk_dir, 
-                        self.rdk_coherence, self.rdk_duration, response, response_time]
+                       trial_info['trial_no'], trial_info['is_practice'], trial_info['direction'], 
+                        trial_info['coherence'], trial_info['duration'], response, response_time]
                       
         return choice_info, response
 
-    def show_feedback_screen(self, response):
+    def show_feedback_screen(self, response, trial_info):
         self.mouse.set_visible(False)
-        if (response==self.rdk_dir):
+        if (response==trial_info['direction']):
             if (response==0):
                 self.disp.fill(self.right_pos_feedback_screen)
             else:

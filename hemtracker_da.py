@@ -18,37 +18,40 @@ class HEMTrackerDA:
     def initialize_log(self):
         log_name = 'data/raw/%s/' + self.exp_info['subj_id'] + '_' + \
                 self.exp_info['start_time'] + '_%s.txt'
-        self.stim_log_file = log_name % ('stim', 'stim')
-        self.response_dynamics_log_file = log_name % ('dynamics', 'dynamics')
+        
         self.choices_log_file = log_name % ('choices', 'choices')
-    
-        with open(self.stim_log_file, 'ab+') as fp:
-            writer = csv.writer(fp, delimiter = '\t')
-            writer.writerow(['subj_id', 'session_no', 'block_no', 'trial_no', 'timestamp', 
-                             'mouse_x', 'mouse_y', 'eye_x', 'eye_y', 'pupil_size'])
-
-        with open(self.response_dynamics_log_file, 'ab+') as fp:
-            writer = csv.writer(fp, delimiter = '\t')
-            writer.writerow(['subj_id', 'session_no', 'block_no', 'trial_no', 'timestamp', 
-                             'mouse_x', 'mouse_y', 'eye_x', 'eye_y', 'pupil_size'])
-                   
         with open(self.choices_log_file, 'ab+') as fp:
             writer = csv.writer(fp, delimiter = '\t')
             writer.writerow(['subj_id', 'session_no', 'block_no', 'trial_no', 'is_practice', 
                              'direction', 'coherence', 'duration', 'response', 'response_time'])
 
-    def write_trial_log(self, stim_viewing_log, response_dynamics_log, choice_info):            
-        with open(self.stim_log_file, 'ab+') as fp:
-            writer = csv.writer(fp, delimiter = '\t')
-            writer.writerows(stim_viewing_log)
+        if not KEYBOARD_MODE:
+            self.stim_log_file = log_name % ('stim', 'stim')
+            self.response_dynamics_log_file = log_name % ('dynamics', 'dynamics')
+            
+            with open(self.stim_log_file, 'ab+') as fp:
+                writer = csv.writer(fp, delimiter = '\t')
+                writer.writerow(['subj_id', 'session_no', 'block_no', 'trial_no', 'timestamp', 
+                                 'mouse_x', 'mouse_y', 'eye_x', 'eye_y', 'pupil_size'])
+    
+            with open(self.response_dynamics_log_file, 'ab+') as fp:
+                writer = csv.writer(fp, delimiter = '\t')
+                writer.writerow(['subj_id', 'session_no', 'block_no', 'trial_no', 'timestamp', 
+                                 'mouse_x', 'mouse_y', 'eye_x', 'eye_y', 'pupil_size'])
 
-        with open(self.response_dynamics_log_file, 'ab+') as fp:
-            writer = csv.writer(fp, delimiter = '\t')
-            writer.writerows(response_dynamics_log)
-                   
+    def write_trial_log(self, stim_viewing_log, response_dynamics_log, choice_info):            
         with open(self.choices_log_file, 'ab+') as fp:
             writer = csv.writer(fp, delimiter = '\t')
-            writer.writerow(choice_info)
+            writer.writerow(choice_info)        
+            
+        if not KEYBOARD_MODE:        
+            with open(self.stim_log_file, 'ab+') as fp:
+                writer = csv.writer(fp, delimiter = '\t')
+                writer.writerows(stim_viewing_log)
+    
+            with open(self.response_dynamics_log_file, 'ab+') as fp:
+                writer = csv.writer(fp, delimiter = '\t')
+                writer.writerows(response_dynamics_log)
         
     def generate_subj_id(self):
         if SUBJ_ID is None:
