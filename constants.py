@@ -1,7 +1,9 @@
 SUBJ_ID = None
 SESSION_NO = 1
 
-KEYBOARD_MODE = True # if not, mouse trajectories of response are recorded
+KEYBOARD_MODE = True 
+# if False, respond with mouse trajectories of response are recorded. 
+# If True, respond with lctrl and rctrl
 ID_RANGE = [101, 999]
 
 FIXATION_DURATION_RANGE = [700, 1000]

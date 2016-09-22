@@ -8,4 +8,4 @@ class MonitorSetup:
         mon.saveMon()
         
 ms = MonitorSetup()
-ms.setup_monitor
+ms.setup_monitor()
