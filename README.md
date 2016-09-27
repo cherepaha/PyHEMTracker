@@ -10,5 +10,8 @@ Dependencies:
 -PyGaze (https://github.com/esdalmaijer/PyGaze)
 
 If you want to specify some parameters of psychopy's ElementArrayStim in degrees of visual angle instead of pixels, 
-you also need to install psychopy's MonitorCenter. In MonitorCenter, you have to create a profile for the monitor 
-you use for stimulus presentation, and specify the display parameters in constants.py
+you have to create a monitor profile in the PsychoPy settings. You can do this in two ways:
+
+1) Set the parameters of your monitor in constants.py and run monitor_setup.py
+
+2) Set up the monitor using psychopy's Monitor Center
