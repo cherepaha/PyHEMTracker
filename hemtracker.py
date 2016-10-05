@@ -76,6 +76,7 @@ class HEMTracker:
                                             (self.exp_info['subj_id'], block_number, trial_number))
 
         stim_viewing_log = []
+        self.user_interface.play_sound_stimulus('LRsound.wav')
         self.user_interface.show_rdk_EAS(trial_info = trial_info,
                                      tracker = self.eye_tracker,                                     
                                      stim_viewing_log = stim_viewing_log)

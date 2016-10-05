@@ -1,5 +1,5 @@
 from __future__ import division
-from psychopy import visual
+from psychopy import visual, sound
 from pygaze import libscreen, libtime, libinput
 import pygaze
 from constants import *
@@ -266,3 +266,7 @@ class HEMTrackerUI:
 
         self.disp.show()
         libtime.pause(300)
+    
+    def play_sound_stimulus(self, file_name):
+        sound_stim = sound.Sound(file_name)
+        sound_stim.play()
