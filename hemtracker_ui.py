@@ -226,10 +226,10 @@ class HEMTrackerUI:
                 eye_position = tracker.sample()
                 pupil_size = 0 if DUMMYMODE else tracker.pupil_size()
                 
-                response_dynamics_log.append([trial_info['subj_id'], trial_info['block_no'], 
-                                     trial_info['trial_no'], str(t), mouse_position[0], 
-                                    mouse_position[1], eye_position[0], 
-                                    eye_position[1], pupil_size])
+                response_dynamics_log.append([trial_info['subj_id'], trial_info['session_no'], 
+                                              trial_info['block_no'], trial_info['trial_no'], 
+                                              str(t), mouse_position[0], mouse_position[1], 
+                                              eye_position[0], eye_position[1], pupil_size])
                 libtime.pause(TIMESTEP)
                 
                 if (self.mouse.get_pressed()[0]==1):
